@@ -11,7 +11,7 @@ pub struct Collection {
 pub struct Configuration {
     pub default_collection: String,
     pub cache_file: String,
-    collections: HashMap<String, Collection>,
+    pub collections: HashMap<String, Collection>,
 }
 
 impl Configuration {

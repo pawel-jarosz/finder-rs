@@ -27,8 +27,8 @@ mod internal {
 }
 
 pub struct Cache {
-    configuration: Configuration,
-    current_collection: String,
+    pub configuration: Configuration,
+    pub current_collection: String,
     changed: bool
 }
 
