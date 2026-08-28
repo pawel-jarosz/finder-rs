@@ -17,6 +17,14 @@ pub enum Commands {
     Collections {
         #[command(subcommand)]
         command: CollectionsCommand,
+    },
+    Places {
+        #[command(subcommand)]
+        command: PlacesCommand
+    },
+    Commands {
+        #[command(subcommand)]
+        command: CommandsCommand
     }
 }
 
@@ -26,4 +34,18 @@ pub enum CollectionsCommand {
     Set {
         collection_name: String,
     }
+}
+
+#[derive(Subcommand)]
+pub enum PlacesCommand {
+    Get {
+        place: String,
+    },
+}
+
+#[derive(Subcommand)]
+pub enum CommandsCommand {
+    Get {
+        command: String,
+    },
 }

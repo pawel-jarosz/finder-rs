@@ -1,13 +1,17 @@
 mod args;
 mod configuration;
 mod cache;
+mod bookmark_collection;
 
 use std::fs;
-
+use clap::command;
 use args::Cli;
 use configuration::Configuration;
-use crate::args::{Commands, Parser};
+
+use crate::args::{Commands, CommandsCommand, Parser, PlacesCommand};
 use crate::args::CollectionsCommand::{List, Set};
+use crate::args::PlacesCommand::Get;
+use crate::bookmark_collection::BookmarkCollection;
 use crate::cache::Cache;
 
 fn list_collections(cache: &Cache) {
@@ -32,6 +36,32 @@ fn set_current_collection(cache: &mut Cache, collection_name: String) {
     }
 }
 
+fn get_place(cache: &Cache, place: String) {
+    let current_collection = cache.get_current_collection();
+
+    let Some(collection_detail) = cache.configuration.collections.get(current_collection) else {
+        return;
+    };
+    let content = fs::read_to_string(&collection_detail.path).expect("File not found!");
+    let bookmarks = BookmarkCollection::load_from_json(content.as_str());
+    if bookmarks.places.contains_key(&place) {
+        print!("{}", bookmarks.places.get(&place).unwrap().path);
+    }
+}
+
+fn get_command(cache: &Cache, command: String) {
+    let current_collection = cache.get_current_collection();
+
+    let Some(collection_detail) = cache.configuration.collections.get(current_collection) else {
+        return;
+    };
+    let content = fs::read_to_string(&collection_detail.path).expect("File not found!");
+    let bookmarks = BookmarkCollection::load_from_json(content.as_str());
+    if bookmarks.commands.contains_key(&command) {
+        print!("{}", bookmarks.commands.get(&command).unwrap().command);
+    }
+}
+
 fn main() {
     let cli = Cli::parse();
     let settings_content = fs::read_to_string(cli.settings.unwrap())
@@ -51,8 +81,15 @@ fn main() {
             Set{collection_name} => {
                 set_current_collection(&mut cache, collection_name);
             }
+        },
+        Commands::Places { command } => match command {
+            PlacesCommand::Get { place } => get_place(&cache, place),
+        },
+        Commands::Commands { command } => match command {
+            CommandsCommand::Get { command } => get_command(&cache, command),
         }
     }
+
 
     if cache.is_changed() {
         cache.dump()
