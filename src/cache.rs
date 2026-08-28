@@ -1,7 +1,6 @@
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::{Path};
 use serde::{Serialize, Deserialize};
-use serde_json::from_slice;
 
 use crate::configuration::Configuration;
 
