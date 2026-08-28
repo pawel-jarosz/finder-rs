@@ -22,5 +22,8 @@ pub enum Commands {
 
 #[derive(Subcommand)]
 pub enum CollectionsCommand {
-    List
+    List,
+    Set {
+        collection_name: String,
+    }
 }

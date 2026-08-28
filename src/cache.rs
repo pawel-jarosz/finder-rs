@@ -1,6 +1,5 @@
 use std::fs;
 use std::path::{Path};
-use serde::{Serialize, Deserialize};
 
 use crate::configuration::Configuration;
 
@@ -27,7 +26,7 @@ mod internal {
 
 pub struct Cache {
     pub configuration: Configuration,
-    pub current_collection: String,
+    current_collection: String,
     changed: bool
 }
 
@@ -49,6 +48,15 @@ impl Cache {
         let json = serde_json::to_string(&internal_cache).unwrap();
 
         fs::write(self.configuration.cache_file.as_str(), json.as_str()).unwrap();
+    }
+
+    pub fn set_current_collection(&mut self, collection_name: String) {
+        self.current_collection = collection_name;
+        self.changed = true;
+    }
+
+    pub fn get_current_collection(&self) -> &str {
+        &self.current_collection
     }
 }
 
