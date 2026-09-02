@@ -5,8 +5,8 @@ pub use clap::{Parser, Subcommand};
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
 pub struct Cli {
-    #[arg(short, long, value_name = "SETTINGS_FILE")]
-    pub settings: Option<PathBuf>,
+    #[arg(short, long, value_name = "SETTINGS_FILE", default_value = "$HOME/.config/finder-rs/settings.json")]
+    pub settings: PathBuf,
 
     #[command(subcommand)]
     pub command: Commands
