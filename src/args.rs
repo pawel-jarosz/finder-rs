@@ -39,6 +39,7 @@ pub enum PlacesCommand {
     Get {
         place: String,
     },
+    List
 }
 
 #[derive(Subcommand)]
@@ -46,4 +47,5 @@ pub enum CommandsCommand {
     Get {
         command: String,
     },
+    List
 }

@@ -34,6 +34,19 @@ fn set_current_collection(cache: &mut Cache, collection_name: String) {
     }
 }
 
+fn list_places(cache: &Cache) {
+    let current_collection = cache.get_current_collection();
+
+    let Some(collection_detail) = cache.configuration.collections.get(current_collection) else {
+        return;
+    };
+    let content = fs::read_to_string(&collection_detail.path).expect("File not found!");
+    let bookmarks = BookmarkCollection::load_from_json(content.as_str());
+    for item in bookmarks.places {
+        println!("{:15} | {}", item.0, item.1.path);
+    }
+}
+
 fn get_place(cache: &Cache, place: String) {
     let current_collection = cache.get_current_collection();
 
@@ -44,6 +57,20 @@ fn get_place(cache: &Cache, place: String) {
     let bookmarks = BookmarkCollection::load_from_json(content.as_str());
     if bookmarks.places.contains_key(&place) {
         print!("{}", bookmarks.places.get(&place).unwrap().path);
+    }
+}
+
+
+fn list_command(cache: &Cache) {
+    let current_collection = cache.get_current_collection();
+
+    let Some(collection_detail) = cache.configuration.collections.get(current_collection) else {
+        return;
+    };
+    let content = fs::read_to_string(&collection_detail.path).expect("File not found!");
+    let bookmarks = BookmarkCollection::load_from_json(content.as_str());
+    for item in bookmarks.commands {
+        println!("{:15} | {}", item.0, item.1.command);
     }
 }
 
@@ -83,9 +110,11 @@ fn main() {
         },
         Commands::Places { command } => match command {
             PlacesCommand::Get { place } => get_place(&cache, place),
+            PlacesCommand::List => list_places(&cache),
         },
         Commands::Commands { command } => match command {
             CommandsCommand::Get { command } => get_command(&cache, command),
+            CommandsCommand::List => list_command(&cache),
         }
     }
 
