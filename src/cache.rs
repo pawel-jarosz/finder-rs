@@ -61,7 +61,9 @@ impl Cache {
 }
 
 pub fn load_cache(configuration: Configuration) -> Cache {
-    let path = Path::new(configuration.cache_file.as_str());
+    let path = shellexpand::full(&configuration.cache_file);
+    let expanded_path = path.expect("Invalid shell expand").as_ref().to_string();
+    let path = Path::new(&expanded_path);
     if !path.exists() {
         let current_collection = configuration.default_collection.clone();
         println!("No such file or directory: {}", path.display());

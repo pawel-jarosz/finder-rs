@@ -62,7 +62,8 @@ fn get_command(cache: &Cache, command: String) {
 
 fn main() {
     let cli = Cli::parse();
-    let settings_content = fs::read_to_string(cli.settings)
+    let settings_content = fs::read_to_string(shellexpand::full(&cli.settings)
+        .expect("Cannot resolve environmental variable").as_ref())
         .expect("Unable to read settings file");
     let Ok(configuration) = Configuration::load_from_json(&settings_content) else {
         eprintln!("Configuration file is invalid or is not available");

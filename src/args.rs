@@ -1,12 +1,10 @@
-use std::path::PathBuf;
-
 pub use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
 pub struct Cli {
     #[arg(short, long, value_name = "SETTINGS_FILE", default_value = "$HOME/.config/finder-rs/settings.json")]
-    pub settings: PathBuf,
+    pub settings: String,
 
     #[command(subcommand)]
     pub command: Commands
