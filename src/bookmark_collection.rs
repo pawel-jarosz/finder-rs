@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize};
 
 #[derive(Debug, Deserialize)]
 pub struct Place {

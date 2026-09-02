@@ -4,13 +4,11 @@ mod cache;
 mod bookmark_collection;
 
 use std::fs;
-use clap::command;
 use args::Cli;
 use configuration::Configuration;
 
 use crate::args::{Commands, CommandsCommand, Parser, PlacesCommand};
 use crate::args::CollectionsCommand::{List, Set};
-use crate::args::PlacesCommand::Get;
 use crate::bookmark_collection::BookmarkCollection;
 use crate::cache::Cache;
 
