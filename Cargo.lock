@@ -130,7 +130,6 @@ name = "finder-rs"
 version = "0.1.0"
 dependencies = [
  "clap",
- "clap_derive",
  "serde",
  "serde_json",
  "shellexpand",
