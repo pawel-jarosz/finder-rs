@@ -1,15 +1,16 @@
-use serde::Deserialize;
+use serde::{Serialize, Deserialize};
 use std::collections::HashMap;
+use std::fs::File;
 use std::path::PathBuf;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Configuration {
     default_collection: String,
     current_collection: String,
     collections: HashMap<String, Collection>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Collection {
     path: PathBuf,
     description: String,
@@ -47,6 +48,27 @@ impl ConfigurationHandler {
             }),
             ConfigurationStatus::ParseError => Err(ConfigurationStatus::ParseError),
         }
+    }
+
+    pub(crate) fn list_collections(&self) {
+        for item in self.configuration.collections.iter() {
+            let state = if item.0.as_str() == self.configuration.current_collection {
+                "active"
+            } else {
+                ""
+            };
+            println!("{:15} | {:10} | {:40} | {}", item.0, state, item.1.description, item.1.path.display());
+        }
+    }
+
+    pub(crate) fn activate_collection(&mut self, collection_name: String) {
+        self.configuration.current_collection = collection_name;
+        self.changed = true;
+    }
+
+    pub fn save(&self) {
+        let content = serde_yaml::to_string(&self.configuration).unwrap();
+        std::fs::write(&self.configuration_path, content).expect("File cannot be overwritten");
     }
 }
 

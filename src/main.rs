@@ -25,7 +25,7 @@ fn main() {
     }
     let configuration =
         ConfigurationHandler::load_configuration(&configuration_content.unwrap(), configuration_file);
-    let Ok(configuration) = configuration else {
+    let Ok(mut configuration) = configuration else {
         panic!("Couldn't parse configuration file.");
     };
 
@@ -33,9 +33,11 @@ fn main() {
         args::Commands::Init {
             shell
         } => subprograms::init(shell),
-        args::Commands::Collections{command} => subprograms::collections(command, configuration),
-        args::Commands::Places {command} => subprograms::places(command),
-        args::Commands::Commands{command} => subprograms::commands(command),
+        args::Commands::Collections{command} => subprograms::collections(command, &mut configuration),
+        args::Commands::Places {command} => subprograms::places(command, &configuration),
+        args::Commands::Commands{command} => subprograms::commands(command, &configuration),
     }
-
+    if configuration.changed {
+        configuration.save();
+    }
 }
