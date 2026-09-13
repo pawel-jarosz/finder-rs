@@ -1,3 +1,5 @@
+use std::fs;
+use crate::configuration::ConfigurationHandler;
 use crate::environment::EnvironmentSetupStatus;
 
 mod environment;
@@ -10,8 +12,12 @@ fn main() {
         EnvironmentSetupStatus::Failed => None
     };
     let Some(configuration_file) = found_configuration else {
-        panic!("Couldn't find configuration file in current working directory.");
+        panic!("Couldn't find configuration file in expected_paths.");
     };
-
-    let configuration = configuration::Configuration::new();
+    let configuration_content = fs::read_to_string(&configuration_file);
+    if let Err(_) = configuration_content {
+        panic!("Couldn't read configuration file.");
+    }
+    let configuration =
+        ConfigurationHandler::load_configuration(&configuration_content.unwrap());
 }
