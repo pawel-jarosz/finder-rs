@@ -33,14 +33,16 @@ impl Configuration {
 
 pub struct ConfigurationHandler {
     pub configuration: Configuration,
+    pub configuration_path: PathBuf,
     pub changed: bool,
 }
 
 impl ConfigurationHandler {
-    pub(crate) fn load_configuration(content: &str) -> Result<ConfigurationHandler, ConfigurationStatus> {
+    pub(crate) fn load_configuration(content: &str, config_name: PathBuf) -> Result<ConfigurationHandler, ConfigurationStatus> {
         match Configuration::load(content) {
             ConfigurationStatus::Success(config) => Ok(ConfigurationHandler {
                 configuration: config,
+                configuration_path: config_name,
                 changed: false,
             }),
             ConfigurationStatus::ParseError => Err(ConfigurationStatus::ParseError),

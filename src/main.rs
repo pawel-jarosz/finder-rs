@@ -1,8 +1,7 @@
 use std::fs;
-use clap::command;
 use crate::configuration::ConfigurationHandler;
 use crate::environment::EnvironmentSetupStatus;
-use crate::args::{Parser, Shell};
+use crate::args::{Parser};
 
 mod environment;
 mod configuration;
@@ -25,7 +24,7 @@ fn main() {
         panic!("Couldn't read configuration file.");
     }
     let configuration =
-        ConfigurationHandler::load_configuration(&configuration_content.unwrap());
+        ConfigurationHandler::load_configuration(&configuration_content.unwrap(), configuration_file);
     let Ok(configuration) = configuration else {
         panic!("Couldn't parse configuration file.");
     };
@@ -34,7 +33,7 @@ fn main() {
         args::Commands::Init {
             shell
         } => subprograms::init(shell),
-        args::Commands::Collections{command} => subprograms::collections(command),
+        args::Commands::Collections{command} => subprograms::collections(command, configuration),
         args::Commands::Places {command} => subprograms::places(command),
         args::Commands::Commands{command} => subprograms::commands(command),
     }
