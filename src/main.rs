@@ -1,11 +1,17 @@
 use std::fs;
+use clap::command;
 use crate::configuration::ConfigurationHandler;
 use crate::environment::EnvironmentSetupStatus;
+use crate::args::{Parser, Shell};
 
 mod environment;
 mod configuration;
+mod args;
+mod subprograms;
 
 fn main() {
+    let cli = args::Cli::parse();
+
     let found_configuration = match environment::setup() {
         EnvironmentSetupStatus::Success(path) => Some(path),
         EnvironmentSetupStatus::UseFallback(path) => Some(path),
@@ -20,4 +26,17 @@ fn main() {
     }
     let configuration =
         ConfigurationHandler::load_configuration(&configuration_content.unwrap());
+    let Ok(configuration) = configuration else {
+        panic!("Couldn't parse configuration file.");
+    };
+
+    match cli.command {
+        args::Commands::Init {
+            shell
+        } => subprograms::init(shell),
+        args::Commands::Collections{command} => subprograms::collections(command),
+        args::Commands::Places {command} => subprograms::places(command),
+        args::Commands::Commands{command} => subprograms::commands(command),
+    }
+
 }
