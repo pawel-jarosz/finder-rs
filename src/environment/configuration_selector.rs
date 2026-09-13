@@ -1,5 +1,4 @@
 use std::path::PathBuf;
-use crate::environment::{configuration_selector, EnvironmentSetupStatus};
 
 #[cfg_attr(test, mockall::automock)]
 pub trait EnvProvider {
@@ -52,10 +51,6 @@ pub(crate) fn select_configuration(env_provider: &dyn EnvProvider) -> Configurat
         return ConfigurationSelection::ConstructedPath(create_configuration_path(path, ".finder-rs/settings.yaml").into());
     }
     ConfigurationSelection::None
-}
-
-pub(crate) fn dump_configuration(path: PathBuf) -> Option<PathBuf> {
-    None
 }
 
 #[cfg(test)]
@@ -163,6 +158,7 @@ mod tests {
         }
     }
     #[test]
+    #[cfg(windows)]
     fn windows_configuration_paths() {
         assert_paths(&[
             (
@@ -204,6 +200,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(unix)]
     fn macos_configuration_paths() {
         assert_paths(&[
             (
@@ -220,6 +217,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(unix)]
     fn linux_configuration_paths() {
         assert_paths(&[
             (
@@ -241,6 +239,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(unix)]
     fn freebsd_configuration_paths() {
         assert_paths(&[
             (
@@ -257,6 +256,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(unix)]
     fn unix_configuration_path_edge_cases() {
         assert_paths(&[
             (

@@ -1,5 +1,4 @@
 use std::path::PathBuf;
-use std::process::exit;
 
 mod configuration_selector;
 
@@ -10,24 +9,30 @@ pub enum EnvironmentSetupStatus {
 }
 
 mod internal {
+    use crate::configuration;
     use crate::environment::configuration_selector::ConfigurationSelection;
     use super::*;
 
     #[cfg_attr(test, mockall::automock)]
-    pub trait FileChecker {
+    pub trait FileIO {
         fn exists(&self, path: &PathBuf) -> bool;
+        fn write(&self, path: &PathBuf, content: &str) -> bool;
     }
 
-    pub struct StdFileChecker;
+    pub struct StdFileIo;
 
-    impl FileChecker for StdFileChecker {
+    impl FileIO for StdFileIo {
         fn exists(&self, path: &PathBuf) -> bool {
             path.exists()
+        }
+
+        fn write(&self, path: &PathBuf, content: &str) -> bool {
+            std::fs::write(path, content).is_ok()
         }
     }
 
     fn handle_configuration(selection: ConfigurationSelection,
-                            file_checker: &dyn FileChecker) -> EnvironmentSetupStatus {
+                            file_checker: &dyn FileIO) -> EnvironmentSetupStatus {
         let (path, profiled_path) = match selection {
             ConfigurationSelection::ConfiguredSettings(path) => {
                 let exists = file_checker.exists(&path);
@@ -53,10 +58,11 @@ mod internal {
         }
     }
 
-    fn try_fallback(path: PathBuf) -> EnvironmentSetupStatus {
-        let result = configuration_selector::dump_configuration(path);
-        if let Some(fallback_path) = result {
-            EnvironmentSetupStatus::UseFallback(fallback_path)
+    fn try_fallback(path: PathBuf, io: &dyn FileIO) -> EnvironmentSetupStatus {
+        let result = configuration::default_configuration();
+        let state = io.write(&path, &result);
+        if state {
+            EnvironmentSetupStatus::UseFallback(path)
         }
         else {
             EnvironmentSetupStatus::Failed
@@ -65,12 +71,12 @@ mod internal {
     }
 
     pub fn setup(env_provider: &dyn configuration_selector::EnvProvider,
-                 file_checker: &dyn FileChecker) -> EnvironmentSetupStatus {
+                 io: &dyn FileIO) -> EnvironmentSetupStatus {
         let expected_configuration = configuration_selector::select_configuration(env_provider);
-        let configuration_state = handle_configuration(expected_configuration, file_checker);
+        let configuration_state = handle_configuration(expected_configuration, io);
         match configuration_state {
             EnvironmentSetupStatus::Success(path) => { EnvironmentSetupStatus::Success(path) }
-            EnvironmentSetupStatus::UseFallback(path) => { try_fallback(path) }
+            EnvironmentSetupStatus::UseFallback(path) => { try_fallback(path, io) }
             EnvironmentSetupStatus::Failed => EnvironmentSetupStatus::Failed
         }
     }
@@ -78,7 +84,7 @@ mod internal {
 
 pub fn setup() -> EnvironmentSetupStatus {
     let dir_env = configuration_selector::StdEnv {};
-    let file_checker = internal::StdFileChecker {};
+    let file_checker = internal::StdFileIo {};
     internal::setup(&dir_env, &file_checker)
 }
 
@@ -86,7 +92,7 @@ pub fn setup() -> EnvironmentSetupStatus {
 mod tests {
     use super::*;
     use configuration_selector::MockEnvProvider;
-    use internal::MockFileChecker;
+    use internal::MockFileIO;
     use mockall::predicate::eq;
     use std::env::VarError;
 
@@ -131,11 +137,12 @@ mod tests {
     #[test]
     fn setup_succeeds_for_existing_configuration_paths() {
         for (env, expected_path) in configuration_locations() {
-            let mut file_checker = MockFileChecker::new();
+            let mut file_checker = MockFileIO::new();
             file_checker.expect_exists()
                 .with(eq(expected_path.clone()))
                 .times(1)
                 .return_const(true);
+            file_checker.expect_write().never();
 
             assert!(matches!(
                 internal::setup(&env, &file_checker),
@@ -145,12 +152,15 @@ mod tests {
     }
 
     #[test]
-    fn setup_fails_when_selected_file_is_missing_and_fallback_is_unavailable() {
-        // dump_configuration currently returns None, so a missing file leads to Failed.
+    fn setup_fails_when_writing_fallback_fails() {
         for (env, expected_path) in configuration_locations() {
-            let mut file_checker = MockFileChecker::new();
+            let mut file_checker = MockFileIO::new();
             file_checker.expect_exists()
                 .with(eq(expected_path.clone()))
+                .times(1)
+                .return_const(false);
+            file_checker.expect_write()
+                .with(eq(expected_path.clone()), eq(crate::configuration::default_configuration()))
                 .times(1)
                 .return_const(false);
 
@@ -158,6 +168,29 @@ mod tests {
                 internal::setup(&env, &file_checker),
                 EnvironmentSetupStatus::Failed
             ), "expected failure for missing {expected_path:?}");
+        }
+    }
+
+    #[test]
+    fn setup_creates_default_configuration_when_selected_file_is_missing() {
+        for (env, expected_path) in configuration_locations() {
+            let mut io = MockFileIO::new();
+            let mut sequence = mockall::Sequence::new();
+            io.expect_exists()
+                .with(eq(expected_path.clone()))
+                .times(1)
+                .in_sequence(&mut sequence)
+                .return_const(false);
+            io.expect_write()
+                .with(eq(expected_path.clone()), eq(crate::configuration::default_configuration()))
+                .times(1)
+                .in_sequence(&mut sequence)
+                .return_const(true);
+
+            assert!(matches!(
+                internal::setup(&env, &io),
+                EnvironmentSetupStatus::UseFallback(path) if path == expected_path
+            ), "expected fallback for {expected_path:?}");
         }
     }
 
@@ -170,8 +203,9 @@ mod tests {
             .return_once(|_| Err(VarError::NotPresent));
         env.expect_config_dir().times(1).return_once(|| None);
         env.expect_home_dir().times(1).return_once(|| None);
-        let mut file_checker = MockFileChecker::new();
+        let mut file_checker = MockFileIO::new();
         file_checker.expect_exists().never();
+        file_checker.expect_write().never();
 
         assert!(matches!(
             internal::setup(&env, &file_checker),
