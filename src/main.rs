@@ -7,6 +7,7 @@ mod environment;
 mod configuration;
 mod args;
 mod subprograms;
+mod collections;
 
 fn main() {
     let cli = args::Cli::parse();

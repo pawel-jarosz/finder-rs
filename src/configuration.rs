@@ -1,18 +1,17 @@
 use serde::{Serialize, Deserialize};
 use std::collections::HashMap;
-use std::fs::File;
 use std::path::PathBuf;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Configuration {
     default_collection: String,
-    current_collection: String,
+    pub(crate) current_collection: String,
     collections: HashMap<String, Collection>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Collection {
-    path: PathBuf,
+    pub(crate) path: PathBuf,
     description: String,
 }
 
@@ -64,6 +63,14 @@ impl ConfigurationHandler {
     pub(crate) fn activate_collection(&mut self, collection_name: String) {
         self.configuration.current_collection = collection_name;
         self.changed = true;
+    }
+
+    pub(crate) fn current_collection(&self) -> &str {
+        &self.configuration.current_collection
+    }
+
+    pub(crate) fn get_collection(&self, collection_name: &str) -> Option<&Collection> {
+        self.configuration.collections.get(collection_name)
     }
 
     pub fn save(&self) {
