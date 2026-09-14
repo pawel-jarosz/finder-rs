@@ -1,51 +1,76 @@
-pub use clap::{Parser, Subcommand};
+pub use clap::{Parser, Subcommand, ValueEnum};
 
-#[derive(Parser)]
-#[command(version, about, long_about = None)]
+#[derive(Parser, Debug)]
+#[command(name = "finder-rs")]
+#[command(version, about = "CLI for collections, places and commands")]
 pub struct Cli {
-    #[arg(short, long, value_name = "SETTINGS_FILE", default_value = "$HOME/.config/finder-rs/settings.json")]
-    pub settings: String,
-
     #[command(subcommand)]
-    pub command: Commands
+    pub command: Commands,
 }
 
-#[derive(Subcommand)]
+#[derive(Subcommand, Debug)]
 pub enum Commands {
+    /// Initialize shell integration
+    Init {
+        #[arg(value_enum)]
+        shell: Shell,
+    },
+
+    /// Manage collections
     Collections {
         #[command(subcommand)]
         command: CollectionsCommand,
     },
+
+    /// Manage places
     Places {
         #[command(subcommand)]
-        command: PlacesCommand
+        command: PlacesCommand,
     },
+
+    /// Manage commands
     Commands {
         #[command(subcommand)]
-        command: CommandsCommand
-    }
+        command: CommandsCommand,
+    },
 }
 
-#[derive(Subcommand)]
+#[derive(ValueEnum, Clone, Debug)]
+pub enum Shell {
+    Bash,
+    Zsh,
+    Nushell,
+}
+
+#[derive(Subcommand, Debug)]
 pub enum CollectionsCommand {
+    /// List collections
     List,
-    Set {
+
+    /// Activate a collection
+    Activate {
         collection_name: String,
-    }
+    },
 }
 
-#[derive(Subcommand)]
+#[derive(Subcommand, Debug)]
 pub enum PlacesCommand {
+    /// Get a place by name
     Get {
-        place: String,
+        place_name: String,
     },
-    List
+
+    /// List places
+    List,
 }
 
-#[derive(Subcommand)]
+#[derive(Subcommand, Debug)]
 pub enum CommandsCommand {
+    /// Get command by name
     Get {
-        command: String,
+        command_name: String,
     },
-    List
+
+    /// List commands
+    List,
 }
